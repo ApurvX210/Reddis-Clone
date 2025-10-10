@@ -57,7 +57,7 @@ func (s *Server) accecptRequest() error {
 }
 
 func (s *Server) handleRawMsg(rawMsg []byte) error{
-
+	return nil
 }
 
 func (s *Server) chanLoop() {
