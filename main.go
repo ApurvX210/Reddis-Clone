@@ -1,9 +1,13 @@
 package main
 
 import (
+	"REDDIS/client"
+	"context"
 	"fmt"
+	"log"
 	"log/slog"
 	"net"
+	"time"
 )
 
 const defaultListenerAddress = ":5001"
@@ -57,6 +61,11 @@ func (s *Server) accecptRequest() error {
 }
 
 func (s *Server) handleRawMsg(rawMsg []byte) error{
+	cmd,err := parseCommand(string(rawMsg))
+	if err != nil{
+		return err
+	}
+	cmd.processCommand()
 	return nil
 }
 
@@ -67,7 +76,6 @@ func (s *Server) chanLoop() {
 				if err := s.handleRawMsg(rawMsg); err != nil{
 					slog.Error("Error Occured while Handling Raw message ","Error",err)
 				}
-				fmt.Println(string(rawMsg))
 			case peer := <-s.addPeerChan:
 				s.peers[peer] = true
 			case <-s.quitChan:
@@ -86,6 +94,17 @@ func (s *Server) handleConnection(conn net.Conn) {
 }
 
 func main() {
-	server := newServer(Config{ListenerAddress: "127.0.0.1:5000"})
-	fmt.Println(server.start())
+	go func ()  {
+		server := newServer(Config{ListenerAddress: "127.0.0.1:5000"})
+		fmt.Println(server.start())
+	}()
+	time.Sleep(time.Second)
+	cl := client.New("localhost:5000")
+
+	if err := cl.Set(context.Background(),"admin","Apurv"); err!= nil{
+		log.Fatal(err)
+	}
+
+	select{}
+	
 }
