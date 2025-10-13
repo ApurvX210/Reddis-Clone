@@ -6,10 +6,14 @@ import (
 
 type Peer struct {
 	con net.Conn
-	msgChan chan []byte
+	msgChan chan Message
 }
 
-func newPeer(connection net.Conn, msgChan chan []byte) *Peer{
+func (p *Peer) Send(msg []byte) (int,error){
+	return p.con.Write(msg)
+}
+
+func newPeer(connection net.Conn, msgChan chan Message) *Peer{
 	return &Peer{
 		con : connection,
 		msgChan : msgChan,
@@ -26,7 +30,7 @@ func (p *Peer) readRequest() error{
 		}
 		msgBuff := make([]byte, n)
 		copy(msgBuff,buff)
-		p.msgChan <- msgBuff
+		p.msgChan <- Message{msgBuff,p}
 	}
 	
 }

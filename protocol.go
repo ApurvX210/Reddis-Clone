@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"log/slog"
-
 	"github.com/tidwall/resp"
 )
 
@@ -17,32 +15,18 @@ const (
 )
 
 type Command interface {
-	processCommand()
 }
 
 type SetCommand struct {
-	key string
-	value any
+	key,value []byte
 }
 
 type GetCommand struct {
-	key string
+	key []byte
 }
 
 type DelCommand struct {
-	key string
-}
-
-func (cmd *SetCommand) processCommand(){
-	slog.Info("Set Command")
-}
-
-func (cmd *GetCommand) processCommand(){
-	slog.Info("Get Command")
-}
-
-func (cmd *DelCommand) processCommand(){
-	slog.Info("Delete Command")
+	key []byte
 }
 
 func parseCommand(rawMsg string) (Command,error){
@@ -62,12 +46,21 @@ func parseCommand(rawMsg string) (Command,error){
 						if len(v.Array()) != 3{
 							return nil,fmt.Errorf("invalid set comand provided: Invalid no of variables")
 						}
-						cmd := &SetCommand {
-							key: v.Array()[1].String(),
-							value: v.Array()[2],
+						cmd := SetCommand {
+							key: v.Array()[1].Bytes(),
+							value: v.Array()[2].Bytes(),
+						}
+						return cmd,nil
+					case CommandGET:
+						if len(v.Array()) != 2{
+							return nil,fmt.Errorf("invalid get comand provided: Invalid no of variables")
+						}
+						cmd := GetCommand {
+							key: v.Array()[1].Bytes(),
 						}
 						return cmd,nil
 					}
+					
 			}
 		}
 	}
