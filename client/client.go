@@ -28,11 +28,11 @@ func New(address string) (*Client,error) {
 	},nil
 }
 
-func (c *Client) Set(ctx context.Context, key string, val string) (string,error) {
+func (c *Client) Set(ctx context.Context, key string, val any) (string,error) {
 	var buf bytes.Buffer
 	wr := resp.NewWriter(&buf)
 	// fmt.Println("Set")
-	wr.WriteArray([]resp.Value{resp.StringValue("SET"), resp.StringValue(key), resp.StringValue(val)})
+	wr.WriteArray([]resp.Value{resp.StringValue("SET"), resp.StringValue(key), resp.AnyValue(val)})
 	_, error := c.conn.Write(buf.Bytes())
 	if error != nil{
 		return "",error
@@ -55,4 +55,8 @@ func (c *Client) Get(ctx context.Context, key string) (string,error) {
 	responseBuff := make([]byte,1024)
 	n,err := c.conn.Read(responseBuff)
 	return string(responseBuff[:n]),err
+}
+
+func (c *Client) Close() error{
+	return c.conn.Close()
 }
