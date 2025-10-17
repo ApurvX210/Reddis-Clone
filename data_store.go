@@ -30,3 +30,13 @@ func (db *DB) Get(key []byte) ([]byte,bool){
 	val,ok := db.data[string(key)]
 	return val,ok
 }
+
+func (db *DB) hello() string{
+	m:= map[string]any{
+		"server":"redis_clone",
+		"role": "master",
+	}
+	response := initialHandShake(m)
+	print(response)
+	return response
+}

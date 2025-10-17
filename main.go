@@ -97,6 +97,12 @@ func (s *Server) handleMsg(message Message) error {
 		if err != nil {
 			return err
 		}
+	case HelloCommad:
+		response := s.db.hello()
+		_, err = message.peer.Send([]byte(response))
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

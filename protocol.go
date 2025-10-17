@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"reflect"
 	"github.com/tidwall/resp"
 )
 
@@ -12,6 +13,7 @@ const (
 	CommandSET = "SET"
 	CommandGET = "GET"
 	CommandDEL = "DEL"
+	CommandHELLO = "hello"
 )
 
 type Command interface {
@@ -28,6 +30,11 @@ type GetCommand struct {
 type DelCommand struct {
 	key []byte
 }
+
+type HelloCommad struct {
+	version int
+}
+
 
 func parseCommand(rawMsg string) (Command,error){
 	rd := resp.NewReader(bytes.NewBufferString(rawMsg))
@@ -59,10 +66,32 @@ func parseCommand(rawMsg string) (Command,error){
 							key: v.Array()[1].Bytes(),
 						}
 						return cmd,nil
+					case CommandHELLO:
+						cmd := HelloCommad{
+							version: v.Array()[1].Integer(),
+						}
+						return cmd,nil
+					// default:
+
 					}
 					
 			}
 		}
 	}
 	return nil,fmt.Errorf("invalid or unknown command revieved: %s",rawMsg)
+}
+
+func initialHandShake(m map[string]any) string{
+	buf := bytes.Buffer{}
+	buf.WriteString("%"+fmt.Sprintf("%d\r\n",len(m)))
+	for key,val := range m{
+		switch reflect.TypeOf(val).Kind(){
+			case reflect.Int:
+				buf.WriteString(fmt.Sprintf("$%d\r\n%s\r\n:%d\r\n",len(key),key,val))
+			default:
+				buf.WriteString(fmt.Sprintf("$%d\r\n%s\r\n+%s\r\n",len(key),key,val))
+		}
+		
+	}
+	return buf.String()
 }
