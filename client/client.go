@@ -32,7 +32,7 @@ func (c *Client) Set(ctx context.Context, key string, val any) (string,error) {
 	var buf bytes.Buffer
 	wr := resp.NewWriter(&buf)
 	// fmt.Println("Set")
-	wr.WriteArray([]resp.Value{resp.StringValue("SET"), resp.StringValue(key), resp.AnyValue(val)})
+	wr.WriteArray([]resp.Value{resp.StringValue("set"), resp.StringValue(key), resp.AnyValue(val)})
 	_, error := c.conn.Write(buf.Bytes())
 	if error != nil{
 		return "",error
@@ -46,7 +46,7 @@ func (c *Client) Get(ctx context.Context, key string) (string,error) {
 	var buf bytes.Buffer
 	wr := resp.NewWriter(&buf)
 	// fmt.Println("Get")
-	wr.WriteArray([]resp.Value{resp.StringValue("GET"), resp.StringValue(key)})
+	wr.WriteArray([]resp.Value{resp.StringValue("get"), resp.StringValue(key)})
 	_, error := c.conn.Write(buf.Bytes())
 	if error != nil{
 		return "",error

@@ -37,6 +37,5 @@ func (db *DB) hello() string{
 		"role": "master",
 	}
 	response := initialHandShake(m)
-	print(response)
 	return response
 }

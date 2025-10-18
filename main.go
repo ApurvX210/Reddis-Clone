@@ -7,6 +7,7 @@ import (
 	"log"
 	"log/slog"
 	"net"
+	"github.com/tidwall/resp"
 )
 const defaultListenerAddress = ":5000"
 
@@ -75,31 +76,39 @@ func (s *Server) handleMsg(message Message) error {
 	switch cmd := cmd.(type) {
 	case SetCommand:
 		err = s.db.Set(cmd.key, cmd.value)
-		var msg string
+		var msg []byte
 		if err != nil {
-			msg = fmt.Sprintf("Error occured while executing set command key: %s value: %s", cmd.key, cmd.value)
+			msg = []byte(fmt.Sprintf("Error occured while executing set command key: %s value: %s", cmd.key, cmd.value))
 		} else {
-			msg = fmt.Sprintf("Successfully executed set command key: %s value: %s", cmd.key, cmd.value)
+			msg = resp.SimpleStringValue("OK").Bytes()
 		}
-		_, err = message.peer.Send([]byte(msg))
+		_, err = message.peer.Send(msg)
 		if err != nil {
 			return err
 		}
 	case GetCommand:
 		val, response := s.db.Get(cmd.key)
-		var msg string
+		var msg []byte
 		if !response {
-			msg = fmt.Sprintf("Key %s not found", cmd.key)
+			msg = []byte(fmt.Sprintf("Key %s not found", cmd.key))
 		} else {
-			msg = string(val)
+			msg = resp.AnyValue(val).Bytes()
 		}
-		_, err = message.peer.Send([]byte(msg))
+		_, err = message.peer.Send(msg)
 		if err != nil {
 			return err
 		}
 	case HelloCommad:
+		fmt.Println("Apurv Hello")
 		response := s.db.hello()
 		_, err = message.peer.Send([]byte(response))
+		if err != nil {
+			return err
+		}
+	case ClientInfoCommand:
+		fmt.Println("Apurv")
+		response :=  resp.SimpleStringValue("OK").Bytes()
+		_, err = message.peer.Send(response)
 		if err != nil {
 			return err
 		}
