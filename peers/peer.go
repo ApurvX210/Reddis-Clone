@@ -1,8 +1,13 @@
-package main
+package peers
 
 import (
 	"net"
 )
+
+type Message struct {
+	Data []byte
+	Peer *Peer
+}
 
 type Peer struct {
 	con net.Conn
@@ -13,14 +18,14 @@ func (p *Peer) Send(msg []byte) (int,error){
 	return p.con.Write(msg)
 }
 
-func newPeer(connection net.Conn, msgChan chan Message) *Peer{
+func NewPeer(connection net.Conn, msgChan chan Message) *Peer{
 	return &Peer{
 		con : connection,
 		msgChan : msgChan,
 	}
 }
 
-func (p *Peer) readRequest() error{
+func (p *Peer) ReadRequest() error{
 	buff := make([]byte,1024)
 
 	for {

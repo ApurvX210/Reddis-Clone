@@ -1,19 +1,20 @@
-package main
+package parsing
 
 import (
 	"bytes"
 	"fmt"
-	"github.com/tidwall/resp"
 	"io"
 	"log"
 	"reflect"
+
+	"github.com/tidwall/resp"
 )
 
 const (
-	CommandSET   = "set"
-	CommandGET   = "get"
-	CommandDEL   = "del"
-	CommandHELLO = "hello"
+	CommandSET        = "set"
+	CommandGET        = "get"
+	CommandDEL        = "del"
+	CommandHELLO      = "hello"
 	CommandClientInfo = "client"
 )
 
@@ -21,26 +22,26 @@ type Command interface {
 }
 
 type SetCommand struct {
-	key,value []byte
+	Key, Value []byte
 }
 
 type GetCommand struct {
-	key []byte
+	Key []byte
 }
 
 type DelCommand struct {
-	key []byte
+	Key []byte
 }
 
 type HelloCommad struct {
-	version int
+	Version int
 }
 
 type ClientInfoCommand struct {
-	libName string
+	LibName string
 }
 
-func parseCommand(rawMsg string) (Command, error) {
+func ParseCommand(rawMsg string) (Command, error) {
 	rd := resp.NewReader(bytes.NewBufferString(rawMsg))
 	for {
 		v, _, err := rd.ReadValue()
@@ -59,8 +60,8 @@ func parseCommand(rawMsg string) (Command, error) {
 					return nil, fmt.Errorf("invalid set comand provided: Invalid no of variables")
 				}
 				cmd := SetCommand{
-					key:   v.Array()[1].Bytes(),
-					value: v.Array()[2].Bytes(),
+					Key:   v.Array()[1].Bytes(),
+					Value: v.Array()[2].Bytes(),
 				}
 				return cmd, nil
 			case CommandGET:
@@ -68,17 +69,17 @@ func parseCommand(rawMsg string) (Command, error) {
 					return nil, fmt.Errorf("invalid get comand provided: Invalid no of variables")
 				}
 				cmd := GetCommand{
-					key: v.Array()[1].Bytes(),
+					Key: v.Array()[1].Bytes(),
 				}
 				return cmd, nil
 			case CommandHELLO:
 				cmd := HelloCommad{
-					version: v.Array()[1].Integer(),
+					Version: v.Array()[1].Integer(),
 				}
 				return cmd, nil
 			case CommandClientInfo:
 				cmd := ClientInfoCommand{
-					libName: v.Array()[1].String(),
+					LibName: v.Array()[1].String(),
 				}
 				return cmd, nil
 			}
@@ -87,7 +88,7 @@ func parseCommand(rawMsg string) (Command, error) {
 	return nil, fmt.Errorf("invalid or unknown command revieved: %s", rawMsg)
 }
 
-func initialHandShake(m map[string]any) string {
+func InitialHandShake(m map[string]any) string {
 	buf := bytes.Buffer{}
 	buf.WriteString("%" + fmt.Sprintf("%d\r\n", len(m)))
 	for key, val := range m {

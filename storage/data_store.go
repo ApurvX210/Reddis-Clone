@@ -1,12 +1,13 @@
-package main
+package storage
 
 import (
 	// "log/slog"
+	"REDDIS/parsing"
 	"sync"
 )
 
 type DB struct {
-	mu sync.RWMutex
+	mu   sync.RWMutex
 	data map[string][]byte
 }
 
@@ -16,7 +17,7 @@ func NewDb() *DB {
 	}
 }
 
-func (db *DB) Set(key,val []byte) error{
+func (db *DB) Set(key, val []byte) error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 	db.data[string(key)] = []byte(val)
@@ -24,18 +25,18 @@ func (db *DB) Set(key,val []byte) error{
 	return nil
 }
 
-func (db *DB) Get(key []byte) ([]byte,bool){
+func (db *DB) Get(key []byte) ([]byte, bool) {
 	db.mu.RLock()
 	defer db.mu.RUnlock()
-	val,ok := db.data[string(key)]
-	return val,ok
+	val, ok := db.data[string(key)]
+	return val, ok
 }
 
-func (db *DB) hello() string{
-	m:= map[string]any{
-		"server":"redis_clone",
-		"role": "master",
+func (db *DB) Hello() string {
+	m := map[string]any{
+		"server": "redis_clone",
+		"role":   "master",
 	}
-	response := initialHandShake(m)
+	response := parsing.InitialHandShake(m)
 	return response
 }
