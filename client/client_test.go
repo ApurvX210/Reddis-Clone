@@ -48,8 +48,10 @@ func Test_Client1(t *testing.T) {
         DB:       0,  // use default DB
     })
 	defer rdb.Close()
+	fmt.Println("dscdscscdsvdsvdsvsdvddsv")
     err := rdb.Set(ctx, "key", "value", 0).Err()
     if err != nil {
+		fmt.Println(err)
         panic(err)
     }
 	val, err := rdb.Get(ctx, "key").Result()

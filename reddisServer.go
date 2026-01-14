@@ -69,6 +69,12 @@ func (s *Server) accecptRequest() error {
 func (s *Server) handleMsg(message peers.Message) error {
 	cmd, err := parsing.ParseCommand(string(message.Data))
 	if err != nil {
+		// Send RESP error response to client instead of silently failing
+		errorMsg := resp.ErrorValue(err).Bytes()
+		_, sendErr := message.Peer.Send(errorMsg)
+		if sendErr != nil {
+			return sendErr
+		}
 		return err
 	}
 	switch cmd := cmd.(type) {

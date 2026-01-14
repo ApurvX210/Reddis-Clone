@@ -16,6 +16,7 @@ const (
 	CommandDEL        = "del"
 	CommandHELLO      = "hello"
 	CommandClientInfo = "client"
+	SubCommandSetInfo = "setinfo"
 )
 
 type Command interface {
@@ -38,10 +39,11 @@ type HelloCommad struct {
 }
 
 type ClientInfoCommand struct {
-	LibName string
+	info map[string]string
 }
 
 func ParseCommand(rawMsg string) (Command, error) {
+	fmt.Println(rawMsg)
 	rd := resp.NewReader(bytes.NewBufferString(rawMsg))
 	for {
 		v, _, err := rd.ReadValue()
@@ -51,7 +53,7 @@ func ParseCommand(rawMsg string) (Command, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error parsing request: %w", err)
 		}
-		fmt.Println(v.Array()[0])
+		// fmt.Println(v.Array()[0])
 		if v.Type() == resp.Array {
 			value := v.Array()[0]
 			// Redis commands are case-insensitive
@@ -93,18 +95,33 @@ func ParseCommand(rawMsg string) (Command, error) {
 				}
 				return cmd, nil
 			case CommandClientInfo:
-				// CLIENT command can have subcommands like SETNAME, INFO, etc.
+				// CLIENT command can have subcommands like SETINFO, SETNAME, INFO, etc.
 				// Handle gracefully - accept any CLIENT command
-				libName := ""
-				if len(v.Array()) >= 3 {
-					// CLIENT SETNAME <name> format
-					libName = v.Array()[2].String()
-				} else if len(v.Array()) >= 2 {
-					// CLIENT <subcommand> or CLIENT <name> format
-					libName = v.Array()[1].String()
+				info := make(map[string]string)
+
+				// Check if we have at least a subcommand
+				if len(v.Array()) < 2 {
+					cmd := ClientInfoCommand{
+						info: info,
+					}
+					return cmd, nil
 				}
+
+				// Subcommands are case-insensitive
+				subcmd := strings.ToLower(v.Array()[1].String())
+
+				// Handle CLIENT SETINFO <key> <value> format
+				if subcmd == SubCommandSetInfo {
+					if len(v.Array()) >= 4 {
+						key := v.Array()[2].String()
+						value := v.Array()[3].String()
+						info[key] = value
+					}
+				}
+				// For other CLIENT subcommands (SETNAME, INFO, etc.), just accept them
+
 				cmd := ClientInfoCommand{
-					LibName: libName,
+					info: info,
 				}
 				return cmd, nil
 			}
