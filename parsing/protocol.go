@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"log"
 	"reflect"
+	"strings"
 
 	"github.com/tidwall/resp"
 )
@@ -49,12 +49,14 @@ func ParseCommand(rawMsg string) (Command, error) {
 			break
 		}
 		if err != nil {
-			log.Fatal("Error occured while parsing the request", "err", err)
+			return nil, fmt.Errorf("error parsing request: %w", err)
 		}
 		fmt.Println(v.Array()[0])
 		if v.Type() == resp.Array {
 			value := v.Array()[0]
-			switch value.String() {
+			// Redis commands are case-insensitive
+			cmdStr := strings.ToLower(value.String())
+			switch cmdStr {
 			case CommandSET:
 				if len(v.Array()) != 3 {
 					return nil, fmt.Errorf("invalid set comand provided: Invalid no of variables")
@@ -72,14 +74,37 @@ func ParseCommand(rawMsg string) (Command, error) {
 					Key: v.Array()[1].Bytes(),
 				}
 				return cmd, nil
+			case CommandDEL:
+				if len(v.Array()) != 2 {
+					return nil, fmt.Errorf("invalid del comand provided: Invalid no of variables")
+				}
+				cmd := DelCommand{
+					Key: v.Array()[1].Bytes(),
+				}
+				return cmd, nil
 			case CommandHELLO:
+				// HELLO can have 0 or more arguments (version is optional)
+				version := 2 // Default to RESP2
+				if len(v.Array()) >= 2 {
+					version = v.Array()[1].Integer()
+				}
 				cmd := HelloCommad{
-					Version: v.Array()[1].Integer(),
+					Version: version,
 				}
 				return cmd, nil
 			case CommandClientInfo:
+				// CLIENT command can have subcommands like SETNAME, INFO, etc.
+				// Handle gracefully - accept any CLIENT command
+				libName := ""
+				if len(v.Array()) >= 3 {
+					// CLIENT SETNAME <name> format
+					libName = v.Array()[2].String()
+				} else if len(v.Array()) >= 2 {
+					// CLIENT <subcommand> or CLIENT <name> format
+					libName = v.Array()[1].String()
+				}
 				cmd := ClientInfoCommand{
-					LibName: v.Array()[1].String(),
+					LibName: libName,
 				}
 				return cmd, nil
 			}

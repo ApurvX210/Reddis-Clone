@@ -1,15 +1,17 @@
 package main
 
 import (
+	"REDDIS/parsing"
+	"REDDIS/peers"
+	"REDDIS/storage"
 	"fmt"
 	"io"
 	"log/slog"
 	"net"
+
 	"github.com/tidwall/resp"
-	"REDDIS/peers"
-	"REDDIS/storage"
-	"REDDIS/parsing"
 )
+
 const defaultListenerAddress = ":5000"
 
 type Config struct {
@@ -94,15 +96,21 @@ func (s *Server) handleMsg(message peers.Message) error {
 		if err != nil {
 			return err
 		}
+	case parsing.DelCommand:
+		s.db.Get(cmd.Key)
+		var msg []byte
+		msg = []byte(fmt.Sprintf("Key %s deleted successfully", cmd.Key))
+		_, err = message.Peer.Send(msg)
+		if err != nil {
+			return err
+		}
 	case parsing.HelloCommad:
-		fmt.Println("Apurv Hello")
 		response := s.db.Hello()
 		_, err = message.Peer.Send([]byte(response))
 		if err != nil {
 			return err
 		}
 	case parsing.ClientInfoCommand:
-		fmt.Println("Apurv")
 		response := resp.SimpleStringValue("OK").Bytes()
 		_, err = message.Peer.Send(response)
 		if err != nil {

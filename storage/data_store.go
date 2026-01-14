@@ -32,6 +32,16 @@ func (db *DB) Get(key []byte) ([]byte, bool) {
 	return val, ok
 }
 
+func (db *DB) Del(key []byte) bool {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+	_, exists := db.data[string(key)]
+	if exists {
+		delete(db.data, string(key))
+	}
+	return exists
+}
+
 func (db *DB) Hello() string {
 	m := map[string]any{
 		"server": "redis_clone",
