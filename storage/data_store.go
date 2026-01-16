@@ -4,16 +4,25 @@ import (
 	// "log/slog"
 	"REDDIS/parsing"
 	"sync"
+	"time"
 )
 
+type ExpirationInfo struct{
+	timestamp	time.Time
+	life		time.Duration
+}
+
+
 type DB struct {
-	mu   sync.RWMutex
-	data map[string][]byte
+	mu   			sync.RWMutex
+	data 			map[string][]byte
+	expirationMap	map[string] ExpirationInfo
 }
 
 func NewDb() *DB {
 	return &DB{
 		data: map[string][]byte{},
+		expirationMap: make(map[string]ExpirationInfo),
 	}
 }
 
@@ -21,7 +30,7 @@ func (db *DB) Set(key, val []byte) error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 	db.data[string(key)] = []byte(val)
-	// slog.Info("Set Instruction commited successfully","key",key,"value",val)
+	
 	return nil
 }
 
