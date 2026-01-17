@@ -8,6 +8,8 @@ A lightweight Redis-like server implementation written in Go that supports basic
 - Basic Redis protocol (RESP) support
 - Key-value storage operations (GET/SET)
 - Concurrent client handling
+- **TTL (Time To Live)** - Set expiration times for keys
+- **Data Persistence** - Save and load data from disk
 - Simple in-memory database
 
 ## Getting Started
@@ -40,6 +42,14 @@ go run main.go -listenAddress=":6379"
 - `HELLO` - Server greeting command
 - `CLIENT INFO` - Get client information
 
+## Key Features
+
+### TTL (Time To Live)
+Keys can be set with expiration times. The server automatically manages key expiration using an internal expiration map that tracks timestamps and durations for each key.
+
+### Data Persistence
+The server supports data persistence, allowing you to save the database state to disk and restore it on server restart. This ensures your data survives server restarts and system crashes.
+
 ## Architecture
 
 The server implements:
@@ -58,7 +68,6 @@ The server implements:
 ## Limitations
 
 - Basic implementation with limited Redis commands
-- In-memory storage only (no persistence)
 - Simple error handling
 
 ## Contributing
