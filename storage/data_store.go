@@ -9,24 +9,30 @@ import (
 
 type ExpirationInfo struct{
 	timestamp	time.Time
-	life		time.Duration
 }
 
 
 type DB struct {
 	mu   			sync.RWMutex
 	data 			map[string][]byte
-	expirationMap	map[string] ExpirationInfo
+	expiryMu		sync.RWMutex
+	expirationMap	map[string] *ExpirationInfo
+	radix			*Radix	
 }
 
 func NewDb() *DB {
 	return &DB{
 		data: map[string][]byte{},
-		expirationMap: make(map[string]ExpirationInfo),
+		expirationMap: make(map[string]*ExpirationInfo),
+		radix: &Radix{
+			prefix: "",
+			child: map[string]*Radix{},
+			end: true,
+		},
 	}
 }
 
-func (db *DB) Set(key, val []byte) error {
+func (db *DB) Set(key, val []byte, exp time.Time) error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 	db.data[string(key)] = []byte(val)
