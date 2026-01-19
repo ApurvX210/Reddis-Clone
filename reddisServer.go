@@ -79,7 +79,7 @@ func (s *Server) handleMsg(message peers.Message) error {
 	}
 	switch cmd := cmd.(type) {
 	case parsing.SetCommand:
-		err = s.db.Set(cmd.Key, cmd.Value)
+		err = s.db.Set(cmd.Key, cmd.Value, cmd.Exp)
 		var msg []byte
 		if err != nil {
 			msg = []byte(fmt.Sprintf("Error occured while executing set command key: %s value: %s", cmd.Key, cmd.Value))

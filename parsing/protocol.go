@@ -6,7 +6,7 @@ import (
 	"io"
 	"reflect"
 	"strings"
-
+	"time"
 	"github.com/tidwall/resp"
 )
 
@@ -17,13 +17,16 @@ const (
 	CommandHELLO      = "hello"
 	CommandClientInfo = "client"
 	SubCommandSetInfo = "setinfo"
+	SubCommandExpiry  = "exp"
+	DefaultExpiration = 30
 )
 
 type Command interface {
 }
 
 type SetCommand struct {
-	Key, Value []byte
+	Key, Value 	[]byte
+	Exp			time.Time
 }
 
 type GetCommand struct {
@@ -60,12 +63,27 @@ func ParseCommand(rawMsg string) (Command, error) {
 			cmdStr := strings.ToLower(value.String())
 			switch cmdStr {
 			case CommandSET:
-				if len(v.Array()) != 3 {
+				if len(v.Array()) < 3 {
 					return nil, fmt.Errorf("invalid set comand provided: Invalid no of variables")
 				}
-				cmd := SetCommand{
-					Key:   v.Array()[1].Bytes(),
-					Value: v.Array()[2].Bytes(),
+				var subCmd string;
+				var cmd Command;
+				if len(v.Array()) == 5 {
+					subCmd = strings.ToLower(v.Array()[3].String())
+				} 
+				switch subCmd{
+				case SubCommandExpiry:
+					cmd = SetCommand{
+						Key:   v.Array()[1].Bytes(),
+						Value: v.Array()[2].Bytes(),
+						Exp:   time.Now().Add(time.Duration(v.Array()[4].Float()*float64(time.Second))),
+					}
+				default:
+					cmd = SetCommand{
+						Key:   v.Array()[1].Bytes(),
+						Value: v.Array()[2].Bytes(),
+						Exp:   time.Now().Add(DefaultExpiration*time.Second),
+					}
 				}
 				return cmd, nil
 			case CommandGET:
