@@ -13,19 +13,32 @@ type DB struct {
 	data 			map[string][]byte
 	expiryMu		sync.RWMutex
 	expirationMap	map[string] time.Time
-	radix			*Radix	
+	
+	keyList			[]string
+	indexMap		map[string] int
+
+	wg				sync.WaitGroup
 }
 
 func NewDb() *DB {
-	return &DB{
+	db := &DB{
 		data: map[string][]byte{},
 		expirationMap: make(map[string]time.Time),
-		radix: &Radix{
-			prefix: "",
-			child: map[string]*Radix{},
-			end: true,
-		},
+		keyList: make([]string, 0),
+		indexMap: make(map[string]int),
 	}
+
+	db.cleanup()
+	return db
+}
+
+func (db *DB) cleanup(){
+	db.wg.Add(1)
+	go db.activeCleanup()
+}
+
+func (db *DB) activeCleanup(){
+	
 }
 
 func (db *DB) Set(key, val []byte, exp time.Time) error {
