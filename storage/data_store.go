@@ -38,16 +38,28 @@ func (db *DB) cleanup(){
 }
 
 func (db *DB) activeCleanup(){
-	
+
 }
 
 func (db *DB) Set(key, val []byte, exp time.Time) error {
 	db.mu.Lock()
 	db.expiryMu.Lock()
 	// Storing data in map
-	db.data[string(key)] = []byte(val)
-	// Storing expiry info in map for future cleanup
-	db.expirationMap[string(key)] = exp
+	_,exist := db.data[string(key)]
+	if exist{
+		db.data[string(key)] = []byte(val)
+		// Storing expiry info in map for future cleanup
+		db.expirationMap[string(key)] = exp
+	}else{
+		// Adding key in map and list
+		db.data[string(key)] = []byte(val)
+		// Storing expiry info in map for future cleanup
+		db.expirationMap[string(key)] = exp
+
+		db.keyList = append(db.keyList,string(key))
+		db.indexMap[string(key)] = len(db.keyList) - 1
+	}
+	
 	db.mu.Unlock()
 	db.expiryMu.Unlock()
 	return nil
@@ -79,10 +91,26 @@ func (db *DB) Del(key []byte) bool {
 	if exists {
 		delete(db.data, string(key))
 		delete(db.expirationMap, string(key))
+		// Index of key to be removed
+		index := db.indexMap[string(key)]
+		db.removeKeyFromList(index,string(key))
 	}
 	db.mu.Unlock()
 	db.expiryMu.Unlock()
 	return exists
+}
+
+func (db *DB) removeKeyFromList(index int,key string){
+	if index == len(db.keyList) - 1{
+		db.keyList = db.keyList[:len(db.keyList)-1]
+		delete(db.indexMap, key)
+		return
+	}
+	endKey := db.keyList[len(db.keyList)-1]
+	db.keyList[index],db.keyList[len(db.keyList)-1] = db.keyList[len(db.keyList)-1],db.keyList[index]
+	db.keyList = db.keyList[:len(db.keyList)-1]
+	delete(db.indexMap, key)
+	db.indexMap[endKey] = index
 }
 
 func (db *DB) Hello() string {
